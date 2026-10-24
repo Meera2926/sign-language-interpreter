@@ -223,33 +223,45 @@ def main():
         cv2.putText(frame, "SENTENCE:", (20, h - 35), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 215, 255), 2, cv2.LINE_AA)
         cv2.putText(frame, sentence_str[:60], (150, h - 35), cv2.FONT_HERSHEY_SIMPLEX, 0.75, text_color, 2, cv2.LINE_AA)
 
-        # Show frame in OpenCV window
-        cv2.imshow("AI Sign Language Interpreter - Laptop Camera", frame)
+        # Window title constant
+        win_name = "AI Sign Language Interpreter - Laptop Camera"
+        cv2.imshow(win_name, frame)
 
-        # Keyboard Interactivity
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord('q') or key == 27:  # Q or ESC to quit
+        # Check if user clicked window [X] close button
+        if cv2.getWindowProperty(win_name, cv2.WND_PROP_VISIBLE) < 1:
             break
-        elif key == 32:  # SPACE: commit current sign
-            if active_sign not in ["...", "UNKNOWN"]:
-                clean_word = active_sign.split(" ")[0]
-                sentence_history.append(clean_word)
-                speaker.speak(clean_word)
-        elif key == 8:  # BACKSPACE: remove last word
-            if sentence_history:
-                sentence_history.pop()
-        elif key == ord('s') or key == ord('S'):  # S: speak entire sentence
-            if sentence_history:
-                full_text = " ".join(sentence_history)
-                speaker.speak(full_text)
-        elif key == ord('c') or key == ord('C'):  # C: clear sentence
-            sentence_history.clear()
 
-    # Cleanup
-    speaker.stop()
+        # Keyboard Interactivity (handles both focused window and key codes)
+        key = cv2.waitKey(1)
+        if key != -1:
+            key_code = key & 0xFF
+            # Quit on 'q', 'Q', or ESC (27)
+            if key_code in [ord('q'), ord('Q'), 27]:
+                break
+            elif key_code == 32:  # SPACE: commit current sign
+                if active_sign not in ["...", "UNKNOWN"]:
+                    clean_word = active_sign.split(" ")[0]
+                    sentence_history.append(clean_word)
+                    speaker.speak(clean_word)
+            elif key_code == 8:  # BACKSPACE: remove last word
+                if sentence_history:
+                    sentence_history.pop()
+            elif key_code in [ord('s'), ord('S')]:  # S: speak entire sentence
+                if sentence_history:
+                    full_text = " ".join(sentence_history)
+                    speaker.speak(full_text)
+            elif key_code in [ord('c'), ord('C')]:  # C: clear sentence
+                sentence_history.clear()
+
+    # Fast cleanup
     cap.release()
     cv2.destroyAllWindows()
+    try:
+        speaker.stop()
+    except Exception:
+        pass
     print("Interpreter closed safely.")
+    os._exit(0)
 
 if __name__ == "__main__":
     main()
